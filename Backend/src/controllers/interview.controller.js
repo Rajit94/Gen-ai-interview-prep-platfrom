@@ -1,37 +1,80 @@
-const pdfParse = require("pdf-parse")
+const pdfParse = require("pdf-parse-new")
 const { generateInterviewReport, generateResumePdf } = require("../services/ai.service")
 const interviewReportModel = require("../models/interviewReport.model")
 
+function extractJobTitle(jobDescription = "") {
+    if (!jobDescription || typeof jobDescription !== "string") {
+        return ""
+    }
 
+    const patterns = [
+        /job\s*title\s*[:\-]\s*(.+)/i,
+        /position\s*[:\-]\s*(.+)/i,
+        /role\s*[:\-]\s*(.+)/i,
+        /opening\s*for\s+(.+)/i,
+        /hiring\s+for\s+(.+)/i
+    ]
+
+    for (const pattern of patterns) {
+        const match = jobDescription.match(pattern)
+        if (match?.[1]) {
+            return match[1].split("\n")[0].trim().slice(0, 120)
+        }
+    }
+
+    const firstMeaningfulLine = jobDescription
+        .split("\n")
+        .map((line) => line.trim())
+        .find((line) => line.length > 3)
+
+    return firstMeaningfulLine ? firstMeaningfulLine.slice(0, 120) : ""
+}
 
 
 /**
  * @description Controller to generate interview report based on user self description, resume and job description.
  */
 async function generateInterViewReportController(req, res) {
+    try {
+        const { selfDescription, jobDescription } = req.body
 
-    const resumeContent = await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText()
-    const { selfDescription, jobDescription } = req.body
+        let resumeText = ""
+        if (req.file) {
+    const resumeContent = await pdfParse(req.file.buffer)
+    resumeText = resumeContent.text
+}
 
-    const interViewReportByAi = await generateInterviewReport({
-        resume: resumeContent.text,
-        selfDescription,
-        jobDescription
-    })
+        const interViewReportByAi = await generateInterviewReport({
+            resume: resumeText,
+            selfDescription,
+            jobDescription
+        })
 
-    const interviewReport = await interviewReportModel.create({
-        user: req.user.id,
-        resume: resumeContent.text,
-        selfDescription,
-        jobDescription,
-        ...interViewReportByAi
-    })
+        const resolvedTitle = interViewReportByAi?.title?.trim() || extractJobTitle(jobDescription)
 
-    res.status(201).json({
-        message: "Interview report generated successfully.",
-        interviewReport
-    })
+        if (!resolvedTitle) {
+            return res.status(400).json({
+                message: "Unable to determine job title for the interview report."
+            })
+        }
 
+        const interviewReport = await interviewReportModel.create({
+            user: req.user.id,
+            resume: resumeText,
+            selfDescription,
+            jobDescription,
+            ...interViewReportByAi,
+            title: resolvedTitle
+        })
+
+        res.status(201).json({
+            message: "Interview report generated successfully.",
+            interviewReport
+        })
+    } catch (err) {
+        console.error(err)
+        res.status(500).json({ message: err.message })
+    }
 }
 
 /**
