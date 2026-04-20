@@ -171,22 +171,44 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
 
 
 async function generatePdfFromHtml(htmlContent) {
-    const browser = await puppeteer.launch()
-    const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: "networkidle0" })
+    let browser
 
-    const pdfBuffer = await page.pdf({
-        format: "A4", margin: {
-            top: "20mm",
-            bottom: "20mm",
-            left: "15mm",
-            right: "15mm"
+    try {
+        browser = await puppeteer.launch({
+            headless: true,
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+            args: [
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu"
+            ]
+        })
+
+        const page = await browser.newPage()
+        await page.emulateMediaType("screen")
+        await page.setContent(htmlContent, {
+            waitUntil: "domcontentloaded",
+            timeout: 60000
+        })
+
+        const pdfBuffer = await page.pdf({
+            format: "A4",
+            printBackground: true,
+            margin: {
+                top: "20mm",
+                bottom: "20mm",
+                left: "15mm",
+                right: "15mm"
+            }
+        })
+
+        return pdfBuffer
+    } finally {
+        if (browser) {
+            await browser.close()
         }
-    })
-
-    await browser.close()
-
-    return pdfBuffer
+    }
 }
 
 async function generateResumePdf({ resume, selfDescription, jobDescription }) {
@@ -225,7 +247,7 @@ async function generateResumePdf({ resume, selfDescription, jobDescription }) {
     })
 
 
-    const jsonContent = JSON.parse(response.text)
+    const jsonContent = resumePdfSchema.parse(JSON.parse(response.text))
 
     const pdfBuffer = await generatePdfFromHtml(jsonContent.html)
 

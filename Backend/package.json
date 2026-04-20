@@ -4,7 +4,8 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon server.js",
+    "start": "node server.js",
+    "postinstall": "npx puppeteer browsers install chrome",
     "dev": "npx nodemon server.js"
   },
   "keywords": [],
