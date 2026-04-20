@@ -2,13 +2,32 @@ const jwt = require("jsonwebtoken")
 const tokenBlacklistModel = require("../models/blacklist.model")
 
 
+function getTokenFromRequest(req) {
+    const authHeader = req.headers.authorization || ""
+    const bearerToken = authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : null
+
+    return (
+        req.cookies?.token ||
+        bearerToken ||
+        req.headers["x-auth-token"] ||
+        req.body?.token ||
+        req.query?.token ||
+        null
+    )
+}
+
 async function authUser(req, res, next) {
 
-    const token = req.cookies.token
+    const token = getTokenFromRequest(req)
 
     if (!token) {
         return res.status(401).json({
-            message: "Token not provided."
+            message: "Token not provided.",
+            received: {
+                cookie: Boolean(req.cookies?.token),
+                authorization: Boolean(req.headers.authorization),
+                xAuthToken: Boolean(req.headers["x-auth-token"])
+            }
         })
     }
 
@@ -35,4 +54,4 @@ async function authUser(req, res, next) {
     }
 
 }
-module.exports = { authUser }
+module.exports = { authUser, getTokenFromRequest }
