@@ -13,8 +13,12 @@ const Login = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        await handleLogin({email,password})
-        navigate('/')
+        try {
+            await handleLogin({ email, password })
+            navigate('/', { replace: true })
+        } catch (err) {
+            console.error(err)
+        }
     }
 
     if(loading){
@@ -39,7 +43,7 @@ const Login = () => {
                             onChange={(e) => { setPassword(e.target.value) }}
                             type="password" id="password" name='password' placeholder='Enter password' />
                     </div>
-                    <button className='button primary-button' >Login</button>
+                    <button className='button primary-button' type="submit" >Login</button>
                 </form>
                 <p>Don't have an account? <Link to={"/register"} >Register</Link> </p>
             </div>

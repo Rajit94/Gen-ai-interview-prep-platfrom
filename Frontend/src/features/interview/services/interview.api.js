@@ -1,9 +1,12 @@
 import axios from "axios";
+import { applyAuthHeader, getAuthHeaders } from "../../auth/services/token";
 
 const api = axios.create({
-    baseURL: "http://localhost:3000",
+    baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:3000",
     withCredentials: true,
 })
+
+api.interceptors.request.use(applyAuthHeader)
 
 
 /**
@@ -17,9 +20,9 @@ export const generateInterviewReport = async ({ jobDescription, selfDescription,
     formData.append("resume", resumeFile)
 
     const response = await api.post("/api/interview/", formData, {
-        headers: {
+        headers: getAuthHeaders({
             "Content-Type": "multipart/form-data"
-        }
+        })
     })
 
     return response.data
@@ -31,7 +34,9 @@ export const generateInterviewReport = async ({ jobDescription, selfDescription,
  * @description Service to get interview report by interviewId.
  */
 export const getInterviewReportById = async (interviewId) => {
-    const response = await api.get(`/api/interview/report/${interviewId}`)
+    const response = await api.get(`/api/interview/report/${interviewId}`, {
+        headers: getAuthHeaders()
+    })
 
     return response.data
 }
@@ -41,7 +46,9 @@ export const getInterviewReportById = async (interviewId) => {
  * @description Service to get all interview reports of logged in user.
  */
 export const getAllInterviewReports = async () => {
-    const response = await api.get("/api/interview/")
+    const response = await api.get("/api/interview/", {
+        headers: getAuthHeaders()
+    })
 
     return response.data
 }
@@ -52,6 +59,7 @@ export const getAllInterviewReports = async () => {
  */
 export const generateResumePdf = async ({ interviewReportId }) => {
     const response = await api.post(`/api/interview/resume/pdf/${interviewReportId}`, null, {
+        headers: getAuthHeaders(),
         responseType: "blob"
     })
 
