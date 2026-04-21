@@ -7,7 +7,6 @@ function getTokenFromRequest(req) {
     const bearerToken = authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : null
 
     return (
-        req.cookies?.token ||
         bearerToken ||
         req.headers["x-auth-token"] ||
         req.body?.token ||

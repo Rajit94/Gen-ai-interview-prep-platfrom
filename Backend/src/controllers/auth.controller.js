@@ -2,7 +2,7 @@ const userModel = require("../models/user.model")
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 const tokenBlacklistModel = require("../models/blacklist.model")
-const { authCookieOptions, clearAuthCookieOptions } = require("../config/cookie")
+const { clearAuthCookieOptions } = require("../config/cookie")
 const { getTokenFromRequest } = require("../middlewares/auth.middleware")
 
 /**
@@ -43,9 +43,6 @@ async function registerUserController(req, res) {
         process.env.JWT_SECRET,
         { expiresIn: "1d" }
     )
-
-    res.cookie("token", token, authCookieOptions)
-    
 
     res.status(201).json({
         message: "User registered successfully",
@@ -90,9 +87,6 @@ async function loginUserController(req, res) {
         process.env.JWT_SECRET,
         { expiresIn: "1d" }
     )
-
-    res.cookie("token", token, authCookieOptions)
-    
 
     res.status(200).json({
         message: "User loggedIn successfully.",
