@@ -15,7 +15,7 @@ const Login = () => {
         e.preventDefault()
         try {
             await handleLogin({ email, password })
-            navigate('/', { replace: true })
+            navigate('/home', { replace: true })
         } catch (err) {
             console.error(err)
         }

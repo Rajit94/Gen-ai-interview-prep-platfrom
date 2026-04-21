@@ -15,7 +15,7 @@ const Register = () => {
         e.preventDefault()
         try {
             await handleRegister({ username, email, password })
-            navigate("/", { replace: true })
+            navigate("/home", { replace: true })
         } catch (err) {
             console.error(err)
         }
