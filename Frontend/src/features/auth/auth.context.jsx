@@ -13,17 +13,15 @@ export const AuthProvider = ({ children }) => {
         const bootstrapAuth = async () => {
             const token = getAuthToken()
 
-            // One-time cleanup path: if we have no session token,
-            // clear any legacy auth cookie from older deployments.
+            // If no session token exists, we can render guest routes immediately.
+            // Legacy cookie cleanup can run in background without blocking UI.
             if (!token) {
-                try {
-                    await logout()
-                } catch {
+                setUser(null)
+                setLoading(false)
+
+                logout().catch(() => {
                     // Ignore cleanup failures; user remains unauthenticated.
-                } finally {
-                    setUser(null)
-                    setLoading(false)
-                }
+                })
                 return
             }
 
